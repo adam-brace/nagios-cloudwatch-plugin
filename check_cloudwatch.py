@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 class CloudWatchBase(nagiosplugin.Resource):
 
     def __init__(self, namespace, metric, dimensions, statistic, period, lag, region=None, profile=None):
+       
         self.namespace = namespace
         self.metric = metric
         self.dimensions = dimensions
@@ -24,6 +25,7 @@ class CloudWatchBase(nagiosplugin.Resource):
             self._cw
         except AttributeError:
             self._cw = cloudwatch.connect_to_region(self.region, profile_name=self.profile)
+             #self._cw = cloudwatch.connect_to_region(aws_access_key_id=None, aws_secret_access_key=None, is_secure=True, port=None, proxy=None, proxy_port=None, proxy_user=None, proxy_pass=None, debug=0, https_connection_factory=None, region=None, path='/', security_token=None, validate_certs=True, profile_name=None)
         return self._cw
 
 
