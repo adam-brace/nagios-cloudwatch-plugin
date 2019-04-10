@@ -6,8 +6,7 @@ from datetime import datetime, timedelta
 
 class CloudWatchBase(nagiosplugin.Resource):
 
-    def __init__(self, namespace, metric, dimensions, statistic, period, lag, region=None, profile=None):
-       
+    def __init__(self, namespace, metric, dimensions, statistic, period, lag, region=None, profile=None, aws_access_key_id=None, aws_secret_access_key=None):
         self.namespace = namespace
         self.metric = metric
         self.dimensions = dimensions
@@ -18,14 +17,20 @@ class CloudWatchBase(nagiosplugin.Resource):
             self.region = region
         else:
             self.region = cloudwatch.CloudWatchConnection.DefaultRegionName
+
         self.profile = profile
+
+        self.aws_access_key_id = aws_access_key_id
+
+        self.aws_secret_access_key = aws_secret_access_key
+
+
 
     def _connect(self):
         try:
             self._cw
         except AttributeError:
-            self._cw = cloudwatch.connect_to_region(self.region, profile_name=self.profile)
-             #self._cw = cloudwatch.connect_to_region(aws_access_key_id=None, aws_secret_access_key=None, is_secure=True, port=None, proxy=None, proxy_port=None, proxy_user=None, proxy_pass=None, debug=0, https_connection_factory=None, region=None, path='/', security_token=None, validate_certs=True, profile_name=None)
+            self._cw = cloudwatch.connect_to_region(self.region, profile_name=self.profile, aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
         return self._cw
 
 
@@ -197,16 +202,22 @@ def main():
     argp.add_argument('-P', '--profile',
                       help='Profile name from ~/.aws/credentials')
 
+    argp.add_argument('-A', '--aws_access_key_id',
+                      help='aws_access_key_id')
+
+    argp.add_argument('-S', '--aws_secret_access_key',
+                      help='aws_secret_access_key')
+
     args=argp.parse_args()
 
     if args.ratio:
-        metric = CloudWatchRatioMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.divisor_namespace,  args.divisor_metric, args.divisor_dimensions, args.divisor_statistic, args.region, args.profile)
+        metric = CloudWatchRatioMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.divisor_namespace,  args.divisor_metric, args.divisor_dimensions, args.divisor_statistic, args.region, args.profile, args.aws_access_key_id, args.aws_secret_access_key)
         summary = CloudWatchMetricRatioSummary(args.namespace, args.metric, args.dimensions, args.statistic, args.divisor_namespace,  args.divisor_metric, args.divisor_dimensions, args.divisor_statistic)
     elif args.delta:
-        metric = CloudWatchDeltaMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.delta, args.region, args.profile)
+        metric = CloudWatchDeltaMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.delta, args.region, args.profile, args.aws_access_key_id, args.aws_secret_access_key)
         summary = CloudWatchDeltaMetricSummary(args.namespace, args.metric, args.dimensions, args.statistic, args.delta)
     else:
-        metric = CloudWatchMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.region, args.profile)
+        metric = CloudWatchMetric(args.namespace, args.metric, args.dimensions, args.statistic, args.period, args.lag, args.region, args.profile, args.aws_access_key_id, args.aws_secret_access_key)
         summary = CloudWatchMetricSummary(args.namespace, args.metric, args.dimensions, args.statistic)
 
     check = nagiosplugin.Check(
